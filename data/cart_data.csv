@@ -1,0 +1,6 @@
+index,image,name,description,aisle,price,quantity,discount
+1,asset/img/product/1.png,Milk,Fresh milk 1L,A1,2.5,2,0.1
+2,asset/img/product/2.png,Bread,Whole wheat bread,A2,1.5,3,0.05
+3,asset/img/product/3.png,Eggs,Free-range eggs,A3,3.0,1,0.0
+4,asset/img/product/4.png,Cheese,Cheddar cheese,A4,4.0,1,0.15
+5,asset/img/product/5.png,Butter,Unsalted butter,A5,2.0,1,0.0

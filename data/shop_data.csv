@@ -1,0 +1,19 @@
+index,image,name,description,aisle,price,quantity,discount
+1,asset/img/product/1.png,Milk,Fresh milk 1L,A1,2.5,2,0.1
+2,asset/img/product/2.png,Bread,Whole wheat bread,A2,1.5,3,0.05
+3,asset/img/product/3.png,Eggs,Free-range eggs,A3,3.0,1,0.0
+4,asset/img/product/4.png,Cheese,Cheddar cheese,A4,4.0,1,0.15
+5,asset/img/product/5.png,Butter,Unsalted butter,A5,2.0,1,0.0
+6,asset/img/product/6.png,Yogurt,Greek yogurt,A6,1.8,2,0.0
+7,asset/img/product/7.png,Chicken,Organic chicken breast,A1,5.0,1,0.2
+8,asset/img/product/8.png,Apples,Fresh apples,A2,0.5,6,0.1
+9,asset/img/product/9.png,Oranges,Juicy oranges,A3,0.6,5,0.05
+10,asset/img/product/10.png,Carrots,Organic carrots,A4,0.8,4,0.0
+11,asset/img/product/11.png,Potatoes,Fresh potatoes,A5,0.7,3,0.1
+12,asset/img/product/12.png,Onions,Yellow onions,A6,0.4,2,0.0
+13,asset/img/product/13.png,Tomatoes,Cherry tomatoes,A1,1.2,3,0.15
+14,asset/img/product/14.png,Spinach,Fresh spinach,A2,1.0,2,0.05
+15,asset/img/product/15.png,Bananas,Ripe bananas,A3,0.3,5,0.0
+16,asset/img/product/16.png,Garlic,Fresh garlic,A4,0.2,1,0.0
+17,asset/img/product/17.png,Cheese,Parmesan cheese,A5,6.0,1,0.1
+18,asset/img/product/18.png,Salmon,Fresh salmon fillet,A6,12.0,1,0.2
