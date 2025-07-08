@@ -61,6 +61,7 @@ class Ui_cart_view(object):
             "Index", "Image", "Name", "Description", "Price", "Quantity", "Discount", "Total"
         ])
         self.tableWidget.verticalHeader().setVisible(False)
+        self.tableWidget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.main_layout.addWidget(self.tableWidget)
 
         self.layout.addWidget(self.main_group)
