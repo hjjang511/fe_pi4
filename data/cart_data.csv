@@ -4,3 +4,4 @@ index,image,name,description,aisle,price,quantity,discount
 3,asset/img/product/3.png,Eggs,Free-range eggs,A3,3.0,1,0.0
 4,asset/img/product/4.png,Cheese,Cheddar cheese,A4,4.0,1,0.15
 5,asset/img/product/5.png,Butter,Unsalted butter,A5,2.0,1,0.0
+18,asset/img/product/18.png,Salmon,Fresh salmon fillet,A6,12.0,1,0.2

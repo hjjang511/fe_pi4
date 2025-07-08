@@ -17,8 +17,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.stack)
 
         # Khởi tạo 3 page
-        self.map_page = MapPage(self)
         self.shop_page = ShopPage(self)
+        self.map_page = MapPage(self)
         self.cart_page = CartPage(self)
 
         # Thêm vào stack
@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.shop_page)
         self.stack.addWidget(self.cart_page)
 
-        self.stack.setCurrentWidget(self.map_page)
+        self.stack.setCurrentWidget(self.shop_page)
 
         self.yolo_thread = QThread()
         self.yolo_worker = YoloWorker(model_path='model/my_model.pt', source='picamera0')  # hoặc picamera0, tùy bạn
@@ -44,10 +44,10 @@ class MainWindow(QMainWindow):
         # Có thể thêm vào giỏ hàng, highlight sản phẩm,...
 
     def navigate_to(self, page_name):
-        if page_name == "map":
-            self.stack.setCurrentWidget(self.map_page)
-        elif page_name == "shop":
+        if page_name == "shop":
             self.stack.setCurrentWidget(self.shop_page)
+        elif page_name == "map":
+            self.stack.setCurrentWidget(self.map_page)
         elif page_name == "cart":
             self.stack.setCurrentWidget(self.cart_page)
     

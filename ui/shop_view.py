@@ -97,9 +97,38 @@ class Ui_shop_view(object):
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
-
+        
+        self.load_cart_data("data/cart_data.csv")
         self.load_shop_data("data/shop_data.csv")
 
+
+    def load_cart_data(self, file_path):
+        try:
+            with open(file_path, newline='') as csvfile:
+                reader = csv.DictReader(csvfile)
+                data = list(reader)
+        except Exception as e:
+            print(f"Error loading cart data: {e}")
+            return
+
+        self.tableWidget.setRowCount(len(data))
+        total_price = 0
+        for row_idx, row in enumerate(data):
+            try:
+                name = row["name"]
+                aisle = row["aisle"]
+                price = float(row["price"])
+                quantity = int(row["quantity"])
+                discount = float(row["discount"])
+                final_price = price * quantity * (1 - discount)
+                total_price += final_price
+
+            except Exception as e:
+                print(f"Error in cart row {row_idx}: {e}")
+
+        self.cart_lb.setText(f"{len(data)} Product")
+        self.amout_lb.setText(f"${total_price:.2f}")
+        
     def add_to_list(self, item):
         list_file = "data/list_data.csv"
 

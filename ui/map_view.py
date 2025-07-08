@@ -111,7 +111,9 @@ class Ui_map_view(object):
         self.footer_layout.addWidget(self.amout_lb)
 
         self.verticalLayout.addWidget(self.footer_widget)
-
+        
+        self.load_list_data("data/list_data.csv")        
+        self.load_cart_data("data/cart_data.csv")
 
     def load_cart_data(self, file_path):
         try:
@@ -134,13 +136,6 @@ class Ui_map_view(object):
                 final_price = price * quantity * (1 - discount)
                 total_price += final_price
 
-                self.tableWidget.setItem(row_idx, 0, QtWidgets.QTableWidgetItem(name))
-                self.tableWidget.setItem(row_idx, 1, QtWidgets.QTableWidgetItem(aisle))
-                self.tableWidget.setItem(row_idx, 2, QtWidgets.QTableWidgetItem(f"${final_price:.2f}"))
-
-                cancel_btn = QtWidgets.QPushButton("❌")
-                cancel_btn.clicked.connect(lambda _, r=row_idx: self.remove_row(r))
-                self.tableWidget.setCellWidget(row_idx, 3, cancel_btn)
             except Exception as e:
                 print(f"Error in cart row {row_idx}: {e}")
 
