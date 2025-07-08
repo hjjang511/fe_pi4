@@ -66,7 +66,8 @@ class Ui_shop_view(object):
             "Index", "Image", "Name", "Aisles", "Description", "Price", "Discount", "Add to List"
         ])
         self.tableWidget.verticalHeader().setVisible(False)
-        self.tableWidget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.tableWidget.horizontalHeader().setDefaultSectionSize(100)
+        self.tableWidget.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
         self.main_layout.addWidget(self.tableWidget)
 
         self.layout.addWidget(self.main_group)

@@ -3,7 +3,7 @@ from ultralytics import YOLO
 import cv2
 import numpy as np
 import platform
-# from picamera2 import Picamera2
+from picamera2 import Picamera2
 
 class YoloWorker(QThread):
     detection_result = pyqtSignal(str)  # Gửi tên sản phẩm

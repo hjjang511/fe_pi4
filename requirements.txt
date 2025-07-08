@@ -1,0 +1,10 @@
+PyQt5==5.15.9
+PyQtWebEngine==5.15.9
+opencv-python-headless==4.9.0.80
+ultralytics==8.1.41
+picamera2
+numpy==1.25.2
+scikit-learn==1.3.2
+scipy==1.11.4
+joblib==1.3.2
+requests
