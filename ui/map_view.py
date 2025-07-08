@@ -54,8 +54,11 @@ class Ui_map_view(object):
         # ---------------- MAIN CONTENT ----------------
         self.main_group = QtWidgets.QGroupBox()
         self.main_group.setTitle("")
+        self.main_group.setFixedSize(1000, 600)
         self.main_layout = QtWidgets.QHBoxLayout(self.main_group)
         self.main_layout.setContentsMargins(50, 10, 50, 10)
+  
+
         # Map container (bản đồ ở giữa)
         self.map_container = QtWidgets.QWidget()
         self.map_container.setMaximumSize(450, 450)
@@ -71,7 +74,6 @@ class Ui_map_view(object):
         self.right_layout = QtWidgets.QVBoxLayout(self.right_box)
         self.right_layout.setContentsMargins(20, 20, 20, 20)
         self.tableWidget = QtWidgets.QTableWidget()
-        self.tableWidget.setMaximumHeight(600)
         self.tableWidget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.tableWidget.setColumnCount(4)
         self.tableWidget.setHorizontalHeaderLabels(["Name", "Aisles", "Price", "Cancel"])

@@ -58,16 +58,17 @@ class Ui_shop_view(object):
 
         # --- Main Content ---
         self.main_group = QtWidgets.QGroupBox()
+        self.main_group.setFixedSize(1000, 600)
         self.main_layout = QtWidgets.QHBoxLayout(self.main_group)
-
+        self.main_layout.setContentsMargins(50, 10, 50, 10)
+        
         self.tableWidget = QtWidgets.QTableWidget()
         self.tableWidget.setColumnCount(8)
         self.tableWidget.setHorizontalHeaderLabels([
             "Index", "Image", "Name", "Aisles", "Description", "Price", "Discount", "Add to List"
         ])
         self.tableWidget.verticalHeader().setVisible(False)
-        self.tableWidget.horizontalHeader().setDefaultSectionSize(100)
-        self.tableWidget.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
+        self.tableWidget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.main_layout.addWidget(self.tableWidget)
 
         self.layout.addWidget(self.main_group)
