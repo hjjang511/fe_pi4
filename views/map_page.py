@@ -6,11 +6,13 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from PyQt5.QtCore import QUrl, QTimer
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 import joblib
-from receive_ble import scan_once
-from trilateration import rssi_to_distance, trilaterate
-from kalman import KalmanFilter2D
+from rssi_positon.trilateration import rssi_to_distance, trilaterate
+from rssi_positon.kalman import KalmanFilter2D
 from ui.map_view import Ui_map_view
 import os
+import pandas as pd
+
+from views.ble_worker import BLEScannerThread
 
 class MapPage(QWidget):
     def __init__(self, main_window):
@@ -46,6 +48,9 @@ class MapPage(QWidget):
         self.path_log_file = open("data/path_log.csv", "w", newline="")
         self.path_writer = csv.writer(self.path_log_file)
         self.path_writer.writerow(["timestamp", "x", "y"])
+        self.ble_thread = BLEScannerThread()
+        self.ble_thread.rssi_signal.connect(self.handle_ble_data)
+
         # Load mô hình
         self.model = joblib.load("model/ble_model.pkl")
 
@@ -69,42 +74,48 @@ class MapPage(QWidget):
             print("⏸️ Dừng quét BLE")
             
     def scan_and_update_position(self):
+        if not self.ble_thread.isRunning():
+            self.ble_thread.start()
+
+    def handle_ble_data(self, rssi_dict):
         try:
-            rssi_dict = asyncio.run(scan_once())
             print("RSSI:", rssi_dict)
 
-            # ---- Dự đoán từ model ML ----
-            input_vector = [rssi_dict.get("0-0", -100),
-                            rssi_dict.get("0-30", -100),
-                            rssi_dict.get("15-30", -100)]
-            x_ml, y_ml = self.model.predict([input_vector])[0]
+            input_df = pd.DataFrame([{
+                "0-0": rssi_dict.get("0-0", -100),
+                "0-30": rssi_dict.get("0-30", -100),
+                "15-30": rssi_dict.get("15-30", -100)
+            }])
+            print("Input to ML:", input_df.to_dict(orient='records'))
+            x_ml, y_ml = self.model.predict(input_df)[0]
 
-            # ---- Tính khoảng cách từ RSSI ----
             d1 = rssi_to_distance(rssi_dict["0-0"])
             d2 = rssi_to_distance(rssi_dict["0-30"])
             d3 = rssi_to_distance(rssi_dict["15-30"])
 
-            # ---- Dự đoán từ trilateration ----
             x_tri, y_tri = trilaterate(self.beacons_pos["0-0"], d1,
-                                        self.beacons_pos["0-30"], d2,
-                                        self.beacons_pos["15-30"], d3)
+                                    self.beacons_pos["0-30"], d2,
+                                    self.beacons_pos["15-30"], d3)
 
-            # ---- Trung bình 2 kết quả hoặc chọn kết quả tin cậy hơn ----
-            x = (x_ml + x_tri) / 2
-            y = (y_ml + y_tri) / 2
+            x = x_ml*1 + x_tri*0
+            y = y_ml*1 + y_tri*0
+            
+            print(f"ML: ({x_ml:.1f}, {y_ml:.1f}) | Trilateration: ({x_tri:.1f}, {y_tri:.1f}) ? Combined: ({x:.1f}, {y:.1f})")
 
-            print(f"ML: ({x_ml:.1f}, {y_ml:.1f}) | Trilateration: ({x_tri:.1f}, {y_tri:.1f}) → Combined: ({x:.1f}, {y:.1f})")
-            # 🧠 Lọc Kalman
-            self.kalman.predict()
-            self.kalman.update([x, y])
-            x_kf, y_kf = self.kalman.get_position()
-            # ---- Cập nhật marker trên map ----
-            self.map_view.page().runJavaScript(f"updateMarker({x_kf}, {y_kf})")
+            self.kalman_filter.predict()
+            self.kalman_filter.update([x, y])
+            x_kf, y_kf = self.kalman_filter.get_position()
+            print(f"KF: ({x_kf:.1f},{y_kf:.1f})")
+
+            scale = 15
+            self.map_view.page().runJavaScript(f"updateMarker({x_kf*scale}, {y_kf*scale})")
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             self.path_writer.writerow([timestamp, round(x_kf, 2), round(y_kf, 2)])
-            self.path_log_file.flush()  # đảm bảo ghi ngay
+            self.path_log_file.flush()
         except Exception as e:
-            print("❌ Lỗi dự đoán vị trí:", e)
+            print("? L?i x? l? BLE:", e)
+
+
             
     def navigate_all_items(self):
         # Lấy danh sách kệ từ bảng sản phẩm
@@ -120,6 +131,6 @@ class MapPage(QWidget):
             js_array = str(aisle_list).replace("'", '"')  # Chuyển sang mảng JavaScript
             self.map_view.page().runJavaScript(f'navigateAll({js_array})')
     def closeEvent(self, event):
-        if hasattr(self, "data/path_log_file"):
+        if hasattr(self, "path_log_file"):
             self.path_log_file.close()
         event.accept()
