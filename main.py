@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentWidget(self.shop_page)
 
         self.yolo_thread = QThread()
-        self.yolo_worker = YoloWorker(model_path='model/my_model.pt', source='picamera0')  # hoặc picamera0, tùy bạn
+        self.yolo_worker = YoloWorker(model_path='model/my_model.pt', source='picamera0')  # hoặc usb0, tùy bạn
         self.yolo_worker.moveToThread(self.yolo_thread)
 
         # Kết nối tín hiệu từ worker
