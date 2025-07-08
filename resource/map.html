@@ -19,14 +19,26 @@
     }
     #marker {
       position: absolute;
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
       background-color: red;
       border-radius: 50%;
       transform: translate(-50%, -50%);
       z-index: 10;
       pointer-events: none;
-      transition: left 0.4s ease, top 0.4s ease;
+      transition: left 0.2s linear, top 0.2s linear; /* m�?t h�n v� ph?n h?i nhanh */
+    }
+    #accuracy-circle {
+      position: absolute;
+      width: 90px;  /* ��?ng k�nh ~ 4 � 15px = 1m */
+      height: 90px;
+      border-radius: 50%;
+      background-color: rgba(0, 0, 255, 0.2); /* xanh nh?t trong su?t */
+      border: 1px dashed #0033cc;
+      transform: translate(-50%, -50%);
+      z-index: 9;
+      pointer-events: none;
+      transition: left 0.5s ease, top 0.5s ease;
     }
     .shelf {
       position: absolute;
@@ -74,17 +86,33 @@
   <div id="container">
     <img id="floorplan" src="map.png" />
     <div id="marker"></div>
+    <div id="accuracy-circle"></div>
   </div>
 
   <script>
     let gridSize = 15, rows = 30, cols = 30, grid;
     let shelves = {};
-    let startPos = { x: 15, y: 0 };
+    let lastMarkerPos = { x: null, y: null };
 
     function updateMarker(x, y) {
       const marker = document.getElementById("marker");
+      const circle = document.getElementById("accuracy-circle");
+
+      // Kh�ng c?p nh?t n?u di chuy?n qu� �t
+      if (lastMarkerPos.x !== null && lastMarkerPos.y !== null) {
+        const dx = x - lastMarkerPos.x;
+        const dy = y - lastMarkerPos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 5) return;
+      }
+
       marker.style.left = x + "px";
       marker.style.top = y + "px";
+
+      circle.style.left = x + "px";
+      circle.style.top = y + "px";
+
+      lastMarkerPos = { x, y };
     }
 
     function addShelf(x, y, width, height, label = "") {
