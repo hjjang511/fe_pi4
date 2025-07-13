@@ -21,7 +21,7 @@ class YoloWorker(QThread):
 
             self.picam2 = Picamera2()
             self.picam2.configure(self.picam2.create_video_configuration(
-                main={"format": 'RGB888', "size": (640, 480)}
+                main={"format": 'RGB888', "size": (416, 416)}
             ))
             self.picam2.start()
         else:

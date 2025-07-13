@@ -23,8 +23,9 @@ class MapPage(QWidget):
 
         # Tạo trình duyệt map
         self.map_view = QWebEngineView()
-        html_path = os.path.abspath("resource/map.html")
-        self.map_view.load(QUrl.fromLocalFile(html_path))
+
+        self.map_view.load(QUrl("http://192.168.0.103:5000/map"))
+
         self.map_loaded = False
         self.map_view.loadFinished.connect(self.on_map_loaded)
 
