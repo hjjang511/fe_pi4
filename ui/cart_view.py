@@ -1,5 +1,8 @@
+import datetime
 from PyQt5 import QtCore, QtGui, QtWidgets
 import csv
+
+import requests
 
 class Ui_cart_view(object):
     def setupUi(self, Form):
@@ -85,13 +88,63 @@ class Ui_cart_view(object):
         self.footer_layout.addStretch()
         self.footer_layout.addWidget(self.lb_mount)
         self.footer_layout.addWidget(self.amout_lb)
+        self.pay_btn = QtWidgets.QPushButton("Thanh Toán")
+        self.pay_btn.setStyleSheet("padding: 8px 16px; font-weight: bold; background-color: #4CAF50; color: white;")
+        self.footer_layout.addWidget(self.pay_btn)
 
         self.layout.addWidget(self.footer_widget)
 
         QtCore.QMetaObject.connectSlotsByName(Form)
+        self.pay_btn.clicked.connect(self.send_payment_to_server)
+        self.load_cart_data("data/cart.csv")
 
-        # Load data
-        self.load_cart_data("data/cart_data.csv")
+    def send_payment_to_server(self):
+        cart = []
+
+        for row in range(self.tableWidget.rowCount()):
+            try:
+                item = {
+                    "index": self.tableWidget.item(row, 0).text(),
+                    "name": self.tableWidget.item(row, 2).text(),
+                    "description": self.tableWidget.item(row, 3).text(),
+                    "price": float(self.tableWidget.item(row, 4).text().replace("$", "")),
+                    "quantity": int(self.tableWidget.item(row, 5).text()),
+                    "discount": float(self.tableWidget.item(row, 6).text().replace("%", "")) / 100,
+                    "total": float(self.tableWidget.item(row, 7).text().replace("$", ""))
+                }
+                cart.append(item)
+            except Exception as e:
+                print(f"❌ Lỗi đọc sản phẩm trong giỏ: {e}")
+
+        # Load đường đi từ path_log.csv
+        path_log = []
+        try:
+            with open("data/path_log.csv", newline='', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                path_log = list(reader)
+        except Exception as e:
+            print(f"❌ Lỗi đọc path_log.csv: {e}")
+
+        if not cart:
+            print("❗ Giỏ hàng rỗng, không gửi!")
+            return
+
+        session_data = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "cart": cart,
+            "total_amount": self.amout_lb.text().replace("$", ""),
+            "path": path_log  # ✅ Thêm đường đi
+        }
+
+        try:
+            response = requests.post("http://192.168.1.10:5000/api/session", json=session_data)
+            if response.status_code == 201:
+                print("✅ Gửi đơn hàng + đường đi thành công!")
+            else:
+                print(f"❌ Gửi thất bại: {response.status_code} - {response.text}")
+        except Exception as e:
+            print(f"❌ Lỗi gửi đến server: {e}")
+
 
     def load_cart_data(self, csv_file):
         with open(csv_file, newline='', encoding='utf-8') as f:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import requests
 import csv
 import os
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -99,7 +99,7 @@ class Ui_shop_view(object):
         QtCore.QMetaObject.connectSlotsByName(Form)
         
         self.load_cart_data("data/cart_data.csv")
-        self.load_shop_data("data/shop_data.csv")
+        self.load_shop_data()
 
 
     def load_cart_data(self, file_path):
@@ -164,44 +164,51 @@ class Ui_shop_view(object):
             })
         print(f"✅ Đã thêm: {item['name']}")
 
-    def load_shop_data(self, file_path):
-        with open(file_path, newline='', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            data = list(reader)
-            self.tableWidget.setRowCount(len(data))
+    def load_shop_data(self, api_url="http://192.168.0.103:5000/api/products"):
+        try:
+            response = requests.get(api_url)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            print(f"❌ Lỗi khi gọi API: {e}")
+            return
 
-            for row, item in enumerate(data):
-                # Index
-                self.tableWidget.setItem(row, 0, QTableWidgetItem(str(item["index"])))
+        self.tableWidget.setRowCount(len(data))
 
-                # Image
-                image_label = QLabel()
-                pixmap = QPixmap(item["image"])
-                pixmap = pixmap.scaled(60, 60, QtCore.Qt.KeepAspectRatio)
-                image_label.setPixmap(pixmap)
-                self.tableWidget.setCellWidget(row, 1, image_label)
+        for row, item in enumerate(data):
+            # Index
+            self.tableWidget.setItem(row, 0, QTableWidgetItem(str(item["id"])))
 
-                # Name
-                self.tableWidget.setItem(row, 2, QTableWidgetItem(item["name"]))
+            # Image
+            image_label = QLabel()
+            image_path = item["image"]
+            if not os.path.exists(image_path):
+                image_path = "asset/img/default.jpg"  # fallback
+            pixmap = QPixmap(image_path).scaled(60, 60, QtCore.Qt.KeepAspectRatio)
+            image_label.setPixmap(pixmap)
+            self.tableWidget.setCellWidget(row, 1, image_label)
 
-                # Aisles
-                self.tableWidget.setItem(row, 3, QTableWidgetItem(item["aisle"]))
+            # Name
+            self.tableWidget.setItem(row, 2, QTableWidgetItem(item["name"]))
 
-                # Description
-                self.tableWidget.setItem(row, 4, QTableWidgetItem(item["description"]))
+            # Aisle
+            self.tableWidget.setItem(row, 3, QTableWidgetItem(item["aisle"]))
 
-                # Price
-                self.tableWidget.setItem(row, 5, QTableWidgetItem(f"${float(item['price']):.2f}"))
+            # Description
+            self.tableWidget.setItem(row, 4, QTableWidgetItem(item.get("description", "")))
 
-                # Discount
-                discount = float(item['discount'])
-                self.tableWidget.setItem(row, 6, QTableWidgetItem(f"{discount*100:.0f}%"))
+            # Price
+            self.tableWidget.setItem(row, 5, QTableWidgetItem(f"${float(item['price']):.2f}"))
 
-                # Add to List button
-                btn = QPushButton("Add")
-                btn.setProperty("product_id", item["index"])  # gắn id nếu cần xử lý sau
-                btn.clicked.connect(lambda checked, item=item: self.add_to_list(item))
-                self.tableWidget.setCellWidget(row, 7, btn)
+            # Discount
+            discount = float(item.get("discount", 0))
+            self.tableWidget.setItem(row, 6, QTableWidgetItem(f"{discount*100:.0f}%"))
+
+            # Add button
+            btn = QPushButton("Add")
+            btn.setProperty("product_id", item["id"])
+            btn.clicked.connect(lambda checked, item=item: self.add_to_list(item))
+            self.tableWidget.setCellWidget(row, 7, btn)
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
