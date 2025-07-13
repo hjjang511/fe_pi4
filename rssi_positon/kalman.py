@@ -2,7 +2,7 @@
 import numpy as np
 
 class KalmanFilter2D:
-    def __init__(self, process_variance=1e-3, measurement_variance=1.0):
+    def __init__(self, process_variance=1e-4, measurement_variance=3.0):
         # Trạng thái: [x, y, vx, vy]
         self.x = np.zeros((4, 1))  # initial state [x, y, vx, vy]
         self.P = np.eye(4)         # initial uncertainty
@@ -30,3 +30,7 @@ class KalmanFilter2D:
 
     def get_position(self):
         return self.x[0, 0], self.x[1, 0]
+    
+    def set_position(self, position):  # [x, y]
+        self.x = np.array([[position[0]], [position[1]], [0.0], [0.0]])
+        self.P = np.eye(4)

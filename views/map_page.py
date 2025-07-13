@@ -23,12 +23,15 @@ class MapPage(QWidget):
 
         # Tạo trình duyệt map
         self.map_view = QWebEngineView()
-        # PC chạy Flask trên 192.168.1.10
-        self.map_view.load(QUrl("http://192.168.0.103:5000/map"))
-
+        html_path = os.path.abspath("resource/map.html")
+        self.map_view.load(QUrl.fromLocalFile(html_path))
+        self.map_loaded = False
+        self.map_view.loadFinished.connect(self.on_map_loaded)
 
         # Khởi tạo Kalman Filter
         self.kalman_filter = KalmanFilter2D()
+        self.kalman_filter.set_position([1, 0])  # V? 15 / 15 = 1, 0 / 15 = 0
+        self.last_pos = [1, 0]
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -53,7 +56,7 @@ class MapPage(QWidget):
         self.ble_thread.rssi_signal.connect(self.handle_ble_data)
 
         # Load mô hình
-        self.model = joblib.load("model/ble_model.pkl")
+        self.model = joblib.load("model/ble_model_v2.pkl")
 
         # Thiết lập timer để quét BLE mỗi 1 giây
         self.timer = QTimer(self)
@@ -64,6 +67,13 @@ class MapPage(QWidget):
             "0-30": (0, 30),
             "15-30": (15, 30)
         }
+    def on_map_loaded(self, ok):
+        if ok:
+            print("? Map loaded th�nh c�ng")
+            self.map_loaded = True
+        else:
+            print("? Map load th?t b?i")
+
     def toggle_ble_scan(self, checked):
         if checked:
             self.ui.scan_btn.setText("🔄 Scanning...")
@@ -107,12 +117,21 @@ class MapPage(QWidget):
             self.kalman_filter.update([x, y])
             x_kf, y_kf = self.kalman_filter.get_position()
             print(f"KF: ({x_kf:.1f},{y_kf:.1f})")
-
+            # �o?n cu?i trong handle_ble_data
             scale = 15
-            self.map_view.page().runJavaScript(f"updateMarker({x_kf*scale}, {y_kf*scale})")
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.path_writer.writerow([timestamp, round(x_kf, 2), round(y_kf, 2)])
-            self.path_log_file.flush()
+            dx = abs(x_kf - self.last_pos[0])
+            dy = abs(y_kf - self.last_pos[1])
+            delta_threshold = 2  # t?i �a 3 grid
+
+            if dx < delta_threshold and dy < delta_threshold:
+                if self.map_loaded:
+                    self.map_view.page().runJavaScript(f"updateMarker({x_kf*scale}, {y_kf*scale})")
+                self.last_pos = [x_kf, y_kf]
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                self.path_writer.writerow([timestamp, round(x_kf, 2), round(y_kf, 2)])
+                self.path_log_file.flush()
+            else:
+                print(f"?? B? qua c?p nh?t do nh?y qu� xa: ?x={dx:.1f}, ?y={dy:.1f}")
         except Exception as e:
             print("? L?i x? l? BLE:", e)
 

@@ -1,7 +1,7 @@
 import joblib
 import pandas as pd
 
-model = joblib.load("model/ble_model.pkl")
+model = joblib.load("model/ble_model_v2.pkl")
 
 test_inputs = [
     {"0-0": -54, "0-30": -52, "15-30": -48},
