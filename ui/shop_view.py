@@ -2,10 +2,12 @@
 import requests
 import csv
 import os
+from PyQt5.QtCore import Qt
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QLabel, QPushButton, QTableWidgetItem
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap,QImage
 from ui.map_view import Ui_map_view
+from io import BytesIO
 
 class Ui_shop_view(object):
     def setupUi(self, Form):
@@ -141,20 +143,20 @@ class Ui_shop_view(object):
         except FileNotFoundError:
             pass  # File sẽ được tạo sau
 
-        if item["index"] in existing:
+        if item["id"] in existing:
             print(f"Sản phẩm {item['name']} đã có trong danh sách.")
             return
 
         # Thêm mới
         with open(list_file, "a", newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=[
-                "index", "image", "name", "aisle", "description", "price", "discount"
+                "id", "image", "name", "aisle", "description", "price", "discount"
             ])
             if os.stat(list_file).st_size == 0:  # Nếu file mới
                 writer.writeheader()
 
             writer.writerow({
-                "index": item["index"],
+                "id": item["id"],
                 "image": item["image"],
                 "name": item["name"],
                 "aisle": item["aisle"],
@@ -181,11 +183,21 @@ class Ui_shop_view(object):
 
             # Image
             image_label = QLabel()
-            image_path = item["image"]
-            if not os.path.exists(image_path):
-                image_path = "asset/img/default.jpg"  # fallback
-            pixmap = QPixmap(image_path).scaled(60, 60, QtCore.Qt.KeepAspectRatio)
-            image_label.setPixmap(pixmap)
+            image_url = f"http://192.168.0.103:5000/static/{item['image']}"
+
+            try:
+                response = requests.get(image_url)
+                if response.status_code == 200:
+                    image_data = response.content
+                    image = QImage()
+                    image.loadFromData(image_data)
+                    pixmap = QPixmap(image).scaled(60, 60, QtCore.Qt.KeepAspectRatio)
+                    image_label.setPixmap(pixmap)
+                else:
+                    print(f"?? Kh�ng t?i ��?c ?nh t? {image_url}")
+            except Exception as e:
+                print(f"? L?i t?i ?nh: {e}")
+
             self.tableWidget.setCellWidget(row, 1, image_label)
 
             # Name

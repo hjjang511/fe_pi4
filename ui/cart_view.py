@@ -96,7 +96,7 @@ class Ui_cart_view(object):
 
         QtCore.QMetaObject.connectSlotsByName(Form)
         self.pay_btn.clicked.connect(self.send_payment_to_server)
-        self.load_cart_data("data/cart.csv")
+        self.load_cart_data("data/cart_data.csv")
 
     def send_payment_to_server(self):
         cart = []
@@ -137,7 +137,7 @@ class Ui_cart_view(object):
         }
 
         try:
-            response = requests.post("http://192.168.1.10:5000/api/session", json=session_data)
+            response = requests.post("http://192.168.0.103:5000/api/session", json=session_data)
             if response.status_code == 201:
                 print("✅ Gửi đơn hàng + đường đi thành công!")
             else:

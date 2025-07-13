@@ -177,32 +177,33 @@ class Ui_map_view(object):
 
 
     def remove_row(self, row):
-        # Xóa khỏi table
-        self.tableWidget.removeRow(row)
-
-        # Đọc lại toàn bộ dữ liệu từ file
         file_path = "data/list_data.csv"
+
+        # �?c to�n b? d? li?u
         try:
             with open(file_path, newline='', encoding='utf-8') as csvfile:
                 reader = list(csv.DictReader(csvfile))
                 fieldnames = reader[0].keys() if reader else []
         except Exception as e:
-            print(f"❌ Lỗi đọc file: {e}")
+            print(f"? L?i �?c file: {e}")
             return
 
-        # Xóa dòng tương ứng
+        # X�a d?ng
         if 0 <= row < len(reader):
             del reader[row]
 
-            # Ghi lại file CSV mới (overwrite)
             try:
                 with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
                     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(reader)
-                print(f"✅ Đã xóa dòng {row} khỏi file CSV")
+                print(f"? �? x�a d?ng {row} kh?i file CSV")
             except Exception as e:
-                print(f"❌ Lỗi ghi lại file: {e}")
+                print(f"? L?i ghi l?i file: {e}")
+
+        # Load l?i b?ng �? l�m m?i c�c n�t Cancel
+        self.load_list_data(file_path)
+
 
 
 
