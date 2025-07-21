@@ -25,7 +25,7 @@ class MapPage(QWidget):
         # Tạo trình duyệt map
         self.map_view = QWebEngineView()
 
-        self.map_view.load(QUrl("http://192.168.0.103:5000/map"))
+        self.map_view.load(QUrl("http://172.20.10.2:5000/map"))
 
         self.map_loaded = False
         self.map_view.loadFinished.connect(self.on_map_loaded)
@@ -35,7 +35,7 @@ class MapPage(QWidget):
         self.kalman_filter.set_position([1, 0])  # V? 15 / 15 = 1, 0 / 15 = 0
         self.last_pos = [1, 0]
 
-        self.rssi_filter = RSSIFilter(window_size=5)
+        self.rssi_filter = RSSIFilter(window_size=7)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -67,9 +67,9 @@ class MapPage(QWidget):
         self.timer.timeout.connect(self.scan_and_update_position)
 
         self.beacons_pos = {
-            "0-0": (0, 0),
-            "0-30": (0, 30),
-            "15-30": (15, 30)
+            "0-0": (6, 8),
+            "0-30": (0, 8),
+            "15-30": (0, 0)
         }
     def on_map_loaded(self, ok):
         if ok:
@@ -96,7 +96,7 @@ class MapPage(QWidget):
         try:
             print("RSSI raw:", rssi_dict)
 
-            # --- 1. Lọc RSSI ---
+            # --- 1. L?c RSSI ---
             filtered_rssi = {
                 k: self.rssi_filter.update(k, v)
                 for k, v in rssi_dict.items()
@@ -104,7 +104,7 @@ class MapPage(QWidget):
 
             print("RSSI filtered:", filtered_rssi)
 
-            # --- 2. Dự đoán vị trí bằng ML ---
+                # --- D? �o�n b?ng m� h?nh ML ---
             input_df = pd.DataFrame([{
                 "0-0": filtered_rssi.get("0-0", -100),
                 "0-30": filtered_rssi.get("0-30", -100),
@@ -112,58 +112,46 @@ class MapPage(QWidget):
             }])
             x_ml, y_ml = self.model.predict(input_df)[0]
 
-            # --- 3. Tính khoảng cách và trilateration ---
-            d1 = rssi_to_distance(filtered_rssi["0-0"])
-            d2 = rssi_to_distance(filtered_rssi["0-30"])
-            d3 = rssi_to_distance(filtered_rssi["15-30"])
+            # --- B? trilateration ho�n to�n (n?u b?n ch�a d�ng t?t) ---
+            x, y = x_ml, y_ml
+            print(f"ML Position: ({x:.2f}, {y:.2f})")
 
-            x_tri, y_tri = trilaterate(self.beacons_pos["0-0"], d1,
-                                    self.beacons_pos["0-30"], d2,
-                                    self.beacons_pos["15-30"], d3)
-
-            # --- 4. Kết hợp ML và trilateration ---
-            x = x_ml * 1 + x_tri * 0
-            y = y_ml * 1 + y_tri * 0
-
-            print(f"ML: ({x_ml:.1f}, {y_ml:.1f}) | Trilateration: ({x_tri:.1f}, {y_tri:.1f}) → Combined: ({x:.1f}, {y:.1f})")
-
-            # --- 5. Kalman filter ---
+            # --- 3. Kalman filter ---
             self.kalman_filter.predict()
             self.kalman_filter.update([x, y])
             x_kf, y_kf = self.kalman_filter.get_position()
 
-            # --- 6. Giới hạn trong bản đồ ---
+            # --- 4. Gi?i h?n trong b?n �? ---
             x_kf = max(0, min(x_kf, 15))
             y_kf = max(0, min(y_kf, 30))
 
-            # --- 7. Giữ nguyên nếu đứng yên ---
+            # --- 5. Gi?i h?n nh?y nh? ---
             dx = abs(x_kf - self.last_pos[0])
             dy = abs(y_kf - self.last_pos[1])
-            movement_threshold = 0.1  # coi như đứng yên nếu nhỏ hơn
 
+            movement_threshold = 0.5  # Gi? nguy�n n?u g?n nh� �?ng y�n
             if dx < movement_threshold and dy < movement_threshold:
+                print(f"?? �?ng y�n t?i ({self.last_pos[0]:.2f}, {self.last_pos[1]:.2f})")
                 x_kf, y_kf = self.last_pos
 
-            print(f"KF: ({x_kf:.2f},{y_kf:.2f})")
-
-            # --- 8. Giới hạn thay đổi quá lớn ---
-            delta_threshold = 2  # tối đa 2 grid (~30cm nếu scale=15)
-            dx_vis = abs(x_kf - self.last_pos[0])
-            dy_vis = abs(y_kf - self.last_pos[1])
-
-            if dx_vis < delta_threshold and dy_vis < delta_threshold:
+            # --- 6. Gi?i h?n thay �?i qu� l?n ---
+            delta_threshold = 1.5  # t?i �a 1.5 grid
+            if dx < delta_threshold and dy < delta_threshold:
                 if self.map_loaded:
-                    self.map_view.page().runJavaScript(f"updateMarker({x_kf * 15}, {y_kf * 15})")
+                    pixel_x = x_kf * 15
+                    pixel_y = y_kf * 15
+                    self.map_view.page().runJavaScript(f"setStartPosition({pixel_x}, {pixel_y})")
+                    self.map_view.page().runJavaScript(f"updateMarker({pixel_x}, {pixel_y})")   
                 self.last_pos = [x_kf, y_kf]
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 self.path_writer.writerow([timestamp, round(x_kf, 2), round(y_kf, 2)])
                 self.path_log_file.flush()
+                print(f"? V? tr� c?p nh?t: ({x_kf:.2f}, {y_kf:.2f}) | dx={dx:.2f}, dy={dy:.2f}")
             else:
-                print(f"⚠️ Bỏ qua do nhảy quá xa: Δx={dx_vis:.2f}, Δy={dy_vis:.2f}")
+                print(f"?? B? qua c?p nh?t do nh?y qu� xa: ?x={dx:.2f}, ?y={dy:.2f}")
 
         except Exception as e:
-            print("❌ Lỗi xử lý BLE:", e)
-
+            print("? L?i x? l? BLE:", e)
 
 
             

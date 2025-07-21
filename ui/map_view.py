@@ -61,7 +61,7 @@ class Ui_map_view(object):
 
         # Map container (bản đồ ở giữa)
         self.map_container = QtWidgets.QWidget()
-        self.map_container.setMaximumSize(450, 450)
+        self.map_container.setMaximumSize(300, 400)
         self.map_container.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
         self.main_layout.addWidget(self.map_container)
 

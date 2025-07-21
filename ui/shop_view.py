@@ -166,7 +166,7 @@ class Ui_shop_view(object):
             })
         print(f"✅ Đã thêm: {item['name']}")
 
-    def load_shop_data(self, api_url="http://192.168.0.103:5000/api/products"):
+    def load_shop_data(self, api_url="http://172.20.10.2:5000/api/products"):
         try:
             response = requests.get(api_url)
             response.raise_for_status()
@@ -183,7 +183,7 @@ class Ui_shop_view(object):
 
             # Image
             image_label = QLabel()
-            image_url = f"http://192.168.0.103:5000/static/{item['image']}"
+            image_url = f"http://172.20.20.2:5000/static/{item['image']}"
 
             try:
                 response = requests.get(image_url)
