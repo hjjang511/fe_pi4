@@ -94,85 +94,9 @@ class Ui_cart_view(object):
         self.pay_btn = QtWidgets.QPushButton("Thanh Toán")
         self.pay_btn.setStyleSheet("padding: 8px 16px; font-weight: bold; background-color: #4CAF50; color: white;")
         self.footer_layout.addWidget(self.pay_btn)
-
         self.layout.addWidget(self.footer_widget)
-
         QtCore.QMetaObject.connectSlotsByName(Form)
-        self.pay_btn.clicked.connect(self.send_payment_to_server)
         self.load_cart_data("data/cart_data.csv")
-
-    def send_payment_to_server(self):
-        cart = []
-
-        # ==== Đọc giỏ hàng từ table ====
-        for row in range(self.tableWidget.rowCount()):
-            try:
-                item = {
-                    "index": self.tableWidget.item(row, 0).text(),
-                    "name": self.tableWidget.item(row, 2).text(),
-                    "description": self.tableWidget.item(row, 3).text(),
-                    "price": float(self.tableWidget.item(row, 4).text().replace("$", "")),
-                    "quantity": int(self.tableWidget.item(row, 5).text()),
-                    "discount": float(self.tableWidget.item(row, 6).text().replace("%", "")) / 100,
-                    "total": float(self.tableWidget.item(row, 7).text().replace("$", ""))
-                }
-                cart.append(item)
-            except Exception as e:
-                print(f"❌ Lỗi đọc sản phẩm trong giỏ: {e}")
-
-        # ==== Đọc đường đi từ path_log.csv ====
-        path_log = []
-        try:
-            with open("data/path_log.csv", newline='', encoding='utf-8') as f:
-                reader = csv.DictReader(f)  # cột: timestamp, x, y
-                for row in reader:
-                    try:
-                        path_log.append({
-                            "timestamp": row["timestamp"],
-                            "x": float(row["x"]),
-                            "y": float(row["y"])
-                        })
-                    except Exception as e:
-                        print(f"⚠️ Lỗi đọc dòng path: {e}")
-        except Exception as e:
-            print(f"❌ Lỗi đọc path_log.csv: {e}")
-
-        if not cart:
-            print("❗ Giỏ hàng rỗng, không gửi!")
-            return
-
-        # ==== Dữ liệu order ====
-        order_data = {
-            "timestamp": datetime.datetime.now().isoformat(),
-            "cart": cart,
-            "total_amount": self.amout_lb.text().replace("$", "")
-        }
-
-        # ==== Dữ liệu path ====
-        path_data = {
-            "path": path_log
-        }
-
-        # ==== Gửi đơn hàng ====
-        try:
-            response = requests.post(f"{API_BASE_URL}/api/orders", json=order_data)
-            if response.status_code == 201:
-                print("✅ Gửi đơn hàng thành công!")
-            else:
-                print(f"❌ Gửi đơn hàng thất bại: {response.status_code} - {response.text}")
-        except Exception as e:
-            print(f"❌ Lỗi gửi order đến server: {e}")
-
-        # ==== Gửi log_path ====
-        if path_log:
-            try:
-                response = requests.post(f"{API_BASE_URL}/api/log_paths", json=path_data)
-                if response.status_code == 201:
-                    print("✅ Gửi log_path thành công!")
-                else:
-                    print(f"❌ Gửi log_path thất bại: {response.status_code} - {response.text}")
-            except Exception as e:
-                print(f"❌ Lỗi gửi path đến server: {e}")
 
 
     def load_cart_data(self, csv_file):
@@ -205,5 +129,16 @@ class Ui_cart_view(object):
             self.tableWidget.setItem(row, 6, QtWidgets.QTableWidgetItem(f"{discount*100:.0f}%"))
             self.tableWidget.setItem(row, 7, QtWidgets.QTableWidgetItem(f"${total:.2f}"))
 
+        total_amount = self.calculate_total_amount(data)
         self.cart_lb.setText(f"{len(data)} Product")
         self.amout_lb.setText(f"${total_amount:.2f}")
+
+    def calculate_total_amount(self, data):
+        total_amount = 0
+        for item in data:
+            price = float(item["price"])
+            quantity = int(item["quantity"])
+            discount = float(item["discount"])
+            total = price * quantity * (1 - discount)
+            total_amount += total
+        return total_amount
