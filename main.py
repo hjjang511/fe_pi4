@@ -27,22 +27,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.cart_page)
 
         self.stack.setCurrentWidget(self.shop_page)
-
-        self.yolo_thread = QThread()
-        self.yolo_worker = YoloWorker(model_path='model/my_model.pt', source='picamera0')  # hoặc usb0, tùy bạn
-        self.yolo_worker.moveToThread(self.yolo_thread)
-
-        # Kết nối tín hiệu từ worker
-        self.yolo_worker.detection_result.connect(self.handle_detected_product)
-
-        # Start worker
-        self.yolo_thread.started.connect(self.yolo_worker.run)
-        self.yolo_thread.start()
-
-    def handle_detected_product(self, product_id):
-        print("📦 Nhận diện sản phẩm:", product_id)
-        # Có thể thêm vào giỏ hàng, highlight sản phẩm,...
-
+        
     def navigate_to(self, page_name):
         if page_name == "shop":
             self.stack.setCurrentWidget(self.shop_page)

@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from PyQt5.QtCore import QUrl, QTimer
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 import joblib
+from views.yolo_worker import YoloWorker
 from rssi_positon.rssi_filter import RSSIFilter
 from rssi_positon.trilateration import rssi_to_distance, trilaterate
 from rssi_positon.kalman import KalmanFilter2D
@@ -25,15 +26,19 @@ class MapPage(QWidget):
         # Tạo trình duyệt map
         self.map_view = QWebEngineView()
 
-        self.map_view.load(QUrl("http://172.20.10.2:5000/map"))
+        self.map_view.load(QUrl.fromLocalFile(os.path.abspath("resource/map.html")))
 
         self.map_loaded = False
         self.map_view.loadFinished.connect(self.on_map_loaded)
 
         # Khởi tạo Kalman Filter
         self.kalman_filter = KalmanFilter2D()
-        self.kalman_filter.set_position([1, 0])  # V? 15 / 15 = 1, 0 / 15 = 0
+        self.kalman_filter.set_position([1, 0])  
         self.last_pos = [1, 0]
+
+        self.yolo_thread = YoloWorker("model/my_model.pt", source="usb0")
+        self.yolo_thread.detection_result.connect(self.handle_yolo_result)
+        self.ui.recognize_btn.toggled.connect(self.toggle_yolo)
 
         self.rssi_filter = RSSIFilter(window_size=7)
 
@@ -168,7 +173,22 @@ class MapPage(QWidget):
         if aisle_list:
             js_array = str(aisle_list).replace("'", '"')  # Chuyển sang mảng JavaScript
             self.map_view.page().runJavaScript(f'navigateAll({js_array})')
+
     def closeEvent(self, event):
         if hasattr(self, "path_log_file"):
             self.path_log_file.close()
         event.accept()
+        
+    def toggle_yolo(self, checked):
+        if checked:
+            self.ui.recognize_btn.setText("🟢 Recognizing...")
+            if not self.yolo_thread.isRunning():
+                self.yolo_thread.start()
+        else:
+            self.ui.recognize_btn.setText("🔍 Recognize")
+            if self.yolo_thread.isRunning():
+                self.yolo_thread.stop()
+
+    def handle_yolo_result(self, cls_name):
+        print(f"✅ YOLO phát hiện: {cls_name}")
+        # bạn có thể update UI hoặc gửi về backend ở đây

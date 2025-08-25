@@ -1,9 +1,12 @@
 import datetime
 from PyQt5 import QtCore, QtGui, QtWidgets
 import csv
-
 import requests
-
+import os
+from dotenv import load_dotenv
+# Load biến môi trường
+load_dotenv()
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:5000/api")  # fallback localhost
 class Ui_cart_view(object):
     def setupUi(self, Form):
         Form.setObjectName("cart_view")
@@ -101,6 +104,7 @@ class Ui_cart_view(object):
     def send_payment_to_server(self):
         cart = []
 
+        # ==== Đọc giỏ hàng từ table ====
         for row in range(self.tableWidget.rowCount()):
             try:
                 item = {
@@ -116,12 +120,20 @@ class Ui_cart_view(object):
             except Exception as e:
                 print(f"❌ Lỗi đọc sản phẩm trong giỏ: {e}")
 
-        # Load đường đi từ path_log.csv
+        # ==== Đọc đường đi từ path_log.csv ====
         path_log = []
         try:
             with open("data/path_log.csv", newline='', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                path_log = list(reader)
+                reader = csv.DictReader(f)  # cột: timestamp, x, y
+                for row in reader:
+                    try:
+                        path_log.append({
+                            "timestamp": row["timestamp"],
+                            "x": float(row["x"]),
+                            "y": float(row["y"])
+                        })
+                    except Exception as e:
+                        print(f"⚠️ Lỗi đọc dòng path: {e}")
         except Exception as e:
             print(f"❌ Lỗi đọc path_log.csv: {e}")
 
@@ -129,21 +141,38 @@ class Ui_cart_view(object):
             print("❗ Giỏ hàng rỗng, không gửi!")
             return
 
-        session_data = {
+        # ==== Dữ liệu order ====
+        order_data = {
             "timestamp": datetime.datetime.now().isoformat(),
             "cart": cart,
-            "total_amount": self.amout_lb.text().replace("$", ""),
-            "path": path_log  # ✅ Thêm đường đi
+            "total_amount": self.amout_lb.text().replace("$", "")
         }
 
+        # ==== Dữ liệu path ====
+        path_data = {
+            "path": path_log
+        }
+
+        # ==== Gửi đơn hàng ====
         try:
-            response = requests.post("http://192.168.0.103:5000/api/session", json=session_data)
+            response = requests.post(f"{API_BASE_URL}/api/orders", json=order_data)
             if response.status_code == 201:
-                print("✅ Gửi đơn hàng + đường đi thành công!")
+                print("✅ Gửi đơn hàng thành công!")
             else:
-                print(f"❌ Gửi thất bại: {response.status_code} - {response.text}")
+                print(f"❌ Gửi đơn hàng thất bại: {response.status_code} - {response.text}")
         except Exception as e:
-            print(f"❌ Lỗi gửi đến server: {e}")
+            print(f"❌ Lỗi gửi order đến server: {e}")
+
+        # ==== Gửi log_path ====
+        if path_log:
+            try:
+                response = requests.post(f"{API_BASE_URL}/api/log_paths", json=path_data)
+                if response.status_code == 201:
+                    print("✅ Gửi log_path thành công!")
+                else:
+                    print(f"❌ Gửi log_path thất bại: {response.status_code} - {response.text}")
+            except Exception as e:
+                print(f"❌ Lỗi gửi path đến server: {e}")
 
 
     def load_cart_data(self, csv_file):

@@ -82,10 +82,15 @@ class Ui_map_view(object):
         self.nagative_btn = QtWidgets.QPushButton("Nagative")
         self.scan_btn = QtWidgets.QPushButton("▶️ Start Scan")
         self.scan_btn.setCheckable(True)
+        
+        # 🌟 Thêm nút Recognize Image
+        self.recognize_btn = QtWidgets.QPushButton("🖼 Recognize Image")
+        self.recognize_btn.setCheckable(True)
 
         self.right_layout.addWidget(self.tableWidget)
         self.right_layout.addWidget(self.nagative_btn, alignment=QtCore.Qt.AlignHCenter)
         self.right_layout.addWidget(self.scan_btn, alignment=QtCore.Qt.AlignHCenter)
+        self.right_layout.addWidget(self.recognize_btn, alignment=QtCore.Qt.AlignHCenter)
 
         self.main_layout.addWidget(self.right_box)
         self.verticalLayout.addWidget(self.main_group)

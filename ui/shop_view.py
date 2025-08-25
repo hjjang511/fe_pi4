@@ -8,7 +8,11 @@ from PyQt5.QtWidgets import QLabel, QPushButton, QTableWidgetItem
 from PyQt5.QtGui import QPixmap,QImage
 from ui.map_view import Ui_map_view
 from io import BytesIO
-
+import os
+from dotenv import load_dotenv
+# Load biến môi trường
+load_dotenv()
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:5000/api")
 class Ui_shop_view(object):
     def setupUi(self, Form):
         Form.setObjectName("shop_view")
@@ -166,7 +170,7 @@ class Ui_shop_view(object):
             })
         print(f"✅ Đã thêm: {item['name']}")
 
-    def load_shop_data(self, api_url="http://172.20.10.2:5000/api/products"):
+    def load_shop_data(self, api_url=f"{API_BASE_URL}/api/products"):
         try:
             response = requests.get(api_url)
             response.raise_for_status()
@@ -183,7 +187,7 @@ class Ui_shop_view(object):
 
             # Image
             image_label = QLabel()
-            image_url = f"http://172.20.20.2:5000/static/{item['image']}"
+            image_url = f"{API_BASE_URL}/static/{item['image']}"
 
             try:
                 response = requests.get(image_url)
