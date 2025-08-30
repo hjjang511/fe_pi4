@@ -79,61 +79,11 @@ class Ui_shop_view(object):
 
         self.layout.addWidget(self.main_group)
 
-        # --- Footer ---
-        self.footer_widget = QtWidgets.QWidget()
-        self.footer_layout = QtWidgets.QHBoxLayout(self.footer_widget)
-        self.footer_layout.setContentsMargins(50, 0, 50, 0)
-
-        self.cart_icon_btn = QtWidgets.QPushButton()
-        self.cart_icon_btn.setIcon(QtGui.QIcon("asset/img/cart.png"))
-        self.cart_icon_btn.setIconSize(QtCore.QSize(34, 34))
-        self.cart_icon_btn.setFlat(True)
-
-        self.cart_lb = QtWidgets.QLabel("0 Product")
-        self.lb_mount = QtWidgets.QLabel("TOTAL MOUNT")
-        self.amout_lb = QtWidgets.QLabel("0")
-
-        self.footer_layout.addWidget(self.cart_icon_btn)
-        self.footer_layout.addWidget(self.cart_lb)
-        self.footer_layout.addStretch()
-        self.footer_layout.addWidget(self.lb_mount)
-        self.footer_layout.addWidget(self.amout_lb)
-
-        self.layout.addWidget(self.footer_widget)
-
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
         
-        self.load_cart_data("data/cart_data.csv")
         self.load_shop_data()
 
-
-    def load_cart_data(self, file_path):
-        try:
-            with open(file_path, newline='') as csvfile:
-                reader = csv.DictReader(csvfile)
-                data = list(reader)
-        except Exception as e:
-            print(f"Error loading cart data: {e}")
-            return
-
-        self.tableWidget.setRowCount(len(data))
-        total_price = 0
-        for row_idx, row in enumerate(data):
-            try:
-                name = row["name"]
-                aisle = row["aisle"]
-                price = float(row["price"])
-                quantity = int(row["quantity"])
-                discount = float(row["discount"])
-                final_price = price * quantity * (1 - discount)
-                total_price += final_price
-
-            except Exception as e:
-                print(f"Error in cart row {row_idx}: {e}")
-
-        self.cart_lb.setText(f"{len(data)} Product")
-        self.amout_lb.setText(f"${total_price:.2f}")
         
     def add_to_list(self, item):
         list_file = "data/list_data.csv"
@@ -170,7 +120,11 @@ class Ui_shop_view(object):
             })
         print(f"✅ Đã thêm: {item['name']}")
 
-    def load_shop_data(self, api_url=f"{API_BASE_URL}/api/products"):
+    def load_shop_data(self, api_url=None):
+        base = API_BASE_URL.rstrip('/')
+        if api_url is None:
+            api_url = base + ("/products" if base.endswith("/api") else "/api/products")
+
         try:
             response = requests.get(api_url)
             response.raise_for_status()
@@ -179,7 +133,14 @@ class Ui_shop_view(object):
             print(f"❌ Lỗi khi gọi API: {e}")
             return
 
+        # === LƯU VÀO CSV NGAY TẠI ĐÂY ===
+        self.save_shop_csv(data, "data/shop_data.csv")
+
+        # === Phần hiển thị như cũ ===
         self.tableWidget.setRowCount(len(data))
+
+        # Chuẩn hóa host cho ảnh tĩnh (tránh '/api/static')
+        host = base[:-4] if base.endswith("/api") else base
 
         for row, item in enumerate(data):
             # Index
@@ -187,44 +148,56 @@ class Ui_shop_view(object):
 
             # Image
             image_label = QLabel()
-            image_url = f"{API_BASE_URL}/static/{item['image']}"
-
+            image_url = f"{host}/static/{item['image']}"
             try:
-                response = requests.get(image_url)
-                if response.status_code == 200:
-                    image_data = response.content
+                img_res = requests.get(image_url)
+                if img_res.status_code == 200:
                     image = QImage()
-                    image.loadFromData(image_data)
+                    image.loadFromData(img_res.content)
                     pixmap = QPixmap(image).scaled(60, 60, QtCore.Qt.KeepAspectRatio)
                     image_label.setPixmap(pixmap)
                 else:
-                    print(f"?? Kh�ng t?i ��?c ?nh t? {image_url}")
+                    print(f"⚠️ Không tải được ảnh từ {image_url}")
             except Exception as e:
-                print(f"? L?i t?i ?nh: {e}")
-
+                print(f"⚠️ Lỗi tải ảnh: {e}")
             self.tableWidget.setCellWidget(row, 1, image_label)
 
             # Name
             self.tableWidget.setItem(row, 2, QTableWidgetItem(item["name"]))
-
             # Aisle
             self.tableWidget.setItem(row, 3, QTableWidgetItem(item["aisle"]))
-
             # Description
             self.tableWidget.setItem(row, 4, QTableWidgetItem(item.get("description", "")))
-
             # Price
             self.tableWidget.setItem(row, 5, QTableWidgetItem(f"${float(item['price']):.2f}"))
-
             # Discount
-            discount = float(item.get("discount", 0))
+            discount = float(item.get("discount", 0) or 0)
             self.tableWidget.setItem(row, 6, QTableWidgetItem(f"{discount*100:.0f}%"))
 
-            # Add button
+            # Add button (nếu vẫn muốn giữ)
             btn = QPushButton("Add")
             btn.setProperty("product_id", item["id"])
             btn.clicked.connect(lambda checked, item=item: self.add_to_list(item))
             self.tableWidget.setCellWidget(row, 7, btn)
+
+
+    def save_shop_csv(self, items, csv_path="data/shop_data.csv"):
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        fieldnames = ["id", "image", "name", "aisle", "description","quantity", "price", "discount"]
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:  # "w" = ghi đè mỗi lần fetch
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for it in items:
+                writer.writerow({
+                    "id": it.get("id"),
+                    "image": it.get("image", ""),
+                    "name": it.get("name", ""),
+                    "aisle": it.get("aisle", ""),
+                    "description": it.get("description", ""),
+                    "quantity": it.get("quantity", 0),
+                    "price": float(it.get("price", 0) or 0),
+                    "discount": float(it.get("discount", 0) or 0),
+                })
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate

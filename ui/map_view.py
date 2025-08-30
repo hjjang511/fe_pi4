@@ -118,34 +118,6 @@ class Ui_map_view(object):
         self.verticalLayout.addWidget(self.footer_widget)
         
         self.load_list_data("data/list_data.csv")        
-        self.load_cart_data("data/cart_data.csv")
-
-    def load_cart_data(self, file_path):
-        try:
-            with open(file_path, newline='') as csvfile:
-                reader = csv.DictReader(csvfile)
-                data = list(reader)
-        except Exception as e:
-            print(f"Error loading cart data: {e}")
-            return
-
-        self.tableWidget.setRowCount(len(data))
-        total_price = 0
-        for row_idx, row in enumerate(data):
-            try:
-                name = row["name"]
-                aisle = row["aisle"]
-                price = float(row["price"])
-                quantity = int(row["quantity"])
-                discount = float(row["discount"])
-                final_price = price * quantity * (1 - discount)
-                total_price += final_price
-
-            except Exception as e:
-                print(f"Error in cart row {row_idx}: {e}")
-
-        self.cart_lb.setText(f"{len(data)} Product")
-        self.amout_lb.setText(f"${total_price:.2f}")
 
     def load_list_data(self, file_path):
         self.tableWidget.setRowCount(0)

@@ -17,6 +17,9 @@ class CartPage(QWidget):
         self.ui.list_btn.clicked.connect(lambda: self.main_window.navigate_to("cart"))
         self.ui.pay_btn.clicked.connect(self.goto_payment)
 
+        # Dữ liệu giỏ hàng {label: quantity}
+        self.cart_items = {}
+
     def goto_payment(self):
         total_amount = int(float(self.ui.amout_lb.text().replace("$", "")))
         self.main_window.navigate_to("payment", amount=total_amount)

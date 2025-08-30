@@ -1,4 +1,5 @@
 import sys
+from PyQt5.QtCore import QFileSystemWatcher
 from PyQt5.QtWidgets import QApplication, QMainWindow, QStackedWidget
 from views.map_page import MapPage
 from views.shop_page import ShopPage
@@ -41,6 +42,22 @@ class MainWindow(QMainWindow):
         self.uart_worker.data_received.connect(self.handle_uart_log)
         self.uart_worker.start()
 
+        self.cart_file = "data/cart_data.csv"
+        
+        # Tạo watcher để theo dõi file cart_data.csv
+        self.cart_watcher = QFileSystemWatcher([self.cart_file])
+        self.cart_watcher.fileChanged.connect(self.on_cart_file_changed)
+
+    def on_cart_file_changed(self):
+        """
+        Khi cart_data.csv thay đổi, tự động reload UI
+        """
+        print("[INFO] cart_data.csv changed, refreshing cart UI...")
+        
+        # Dùng QTimer.singleShot để tránh trigger nhiều lần liên tiếp
+        from PyQt5.QtCore import QTimer
+        QTimer.singleShot(100, self.refresh_cart)
+
     def navigate_to(self, page_name, **kwargs):
         if page_name == "waiting":
             self.stack.setCurrentWidget(self.waiting_page)
@@ -56,6 +73,11 @@ class MainWindow(QMainWindow):
                 self.payment_page.set_amount(amount)
             self.stack.setCurrentWidget(self.payment_page)
 
+
+    def refresh_cart(self):
+        if self.cart_page and hasattr(self.cart_page, "ui"):
+            self.cart_page.ui.load_cart_data(self.cart_file)
+            
     def handle_uart_log(self, text: str):
         # Parse log để điều hướng
         if "Heard on" in text:

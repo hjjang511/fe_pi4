@@ -36,7 +36,7 @@ class MapPage(QWidget):
         self.kalman_filter.set_position([1, 0])  
         self.last_pos = [1, 0]
 
-        self.yolo_thread = YoloWorker("model/my_model.pt", source="usb0")
+        self.yolo_thread = YoloWorker("model/my_model.pt")
         self.yolo_thread.detection_result.connect(self.handle_yolo_result)
         self.ui.recognize_btn.toggled.connect(self.toggle_yolo)
 

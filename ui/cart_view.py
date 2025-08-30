@@ -62,9 +62,9 @@ class Ui_cart_view(object):
         self.main_layout = QtWidgets.QHBoxLayout(self.main_group)
         self.main_layout.setContentsMargins(50, 10, 50, 10)
         self.tableWidget = QtWidgets.QTableWidget()
-        self.tableWidget.setColumnCount(8)
+        self.tableWidget.setColumnCount(7)
         self.tableWidget.setHorizontalHeaderLabels([
-            "Index", "Image", "Name", "Description", "Price", "Quantity", "Discount", "Total"
+            "Index", "Name", "Description", "Price", "Quantity", "Discount", "Total"
         ])
         self.tableWidget.verticalHeader().setVisible(False)
         self.tableWidget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -96,7 +96,6 @@ class Ui_cart_view(object):
         self.footer_layout.addWidget(self.pay_btn)
         self.layout.addWidget(self.footer_widget)
         QtCore.QMetaObject.connectSlotsByName(Form)
-        self.load_cart_data("data/cart_data.csv")
 
 
     def load_cart_data(self, csv_file):
@@ -115,30 +114,12 @@ class Ui_cart_view(object):
             total_amount += total
 
             self.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(item["index"]))
+            self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(item["name"]))
+            self.tableWidget.setItem(row, 2, QtWidgets.QTableWidgetItem(item["description"]))
+            self.tableWidget.setItem(row, 3, QtWidgets.QTableWidgetItem(f"${price:.2f}"))
+            self.tableWidget.setItem(row, 4, QtWidgets.QTableWidgetItem(str(quantity)))
+            self.tableWidget.setItem(row, 5, QtWidgets.QTableWidgetItem(f"{discount*100:.0f}%"))
+            self.tableWidget.setItem(row, 6, QtWidgets.QTableWidgetItem(f"${total:.2f}"))
 
-            # Image
-            image_label = QtWidgets.QLabel()
-            pixmap = QtGui.QPixmap(item["image"]).scaled(50, 50, QtCore.Qt.KeepAspectRatio)
-            image_label.setPixmap(pixmap)
-            image_label.setAlignment(QtCore.Qt.AlignCenter)
-            self.tableWidget.setCellWidget(row, 1, image_label)
-            self.tableWidget.setItem(row, 2, QtWidgets.QTableWidgetItem(item["name"]))
-            self.tableWidget.setItem(row, 3, QtWidgets.QTableWidgetItem(item["description"]))
-            self.tableWidget.setItem(row, 4, QtWidgets.QTableWidgetItem(f"${price:.2f}"))
-            self.tableWidget.setItem(row, 5, QtWidgets.QTableWidgetItem(str(quantity)))
-            self.tableWidget.setItem(row, 6, QtWidgets.QTableWidgetItem(f"{discount*100:.0f}%"))
-            self.tableWidget.setItem(row, 7, QtWidgets.QTableWidgetItem(f"${total:.2f}"))
-
-        total_amount = self.calculate_total_amount(data)
         self.cart_lb.setText(f"{len(data)} Product")
         self.amout_lb.setText(f"${total_amount:.2f}")
-
-    def calculate_total_amount(self, data):
-        total_amount = 0
-        for item in data:
-            price = float(item["price"])
-            quantity = int(item["quantity"])
-            discount = float(item["discount"])
-            total = price * quantity * (1 - discount)
-            total_amount += total
-        return total_amount
