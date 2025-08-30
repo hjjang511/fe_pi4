@@ -38,6 +38,15 @@ class YoloWorker(QThread):
         self.last_action_time = defaultdict(float)
         self.object_labels = {}
 
+    def calculate_movement_vector(self, trajectory):
+        if len(trajectory) < 2:
+            return None, None
+        start_point = trajectory[0]
+        end_point = trajectory[-1]
+        dx = end_point[0] - start_point[0]
+        dy = end_point[1] - start_point[1]
+        return dx, dy
+
     def detect_action(self, trajectory):
         if len(trajectory) < self.TRAJECTORY_HISTORY // 2:
             return None
@@ -51,26 +60,26 @@ class YoloWorker(QThread):
             return None
 
         roi_x1, roi_y1, roi_x2, roi_y2 = self.ROI_BOX
+        roi_center_y = (roi_y1 + roi_y2) / 2
 
         start_point = trajectory[0]
         end_point = trajectory[-1]
 
         # VAO: đi từ ngoài vào
         if dy > 0:
-            start_outside = not (roi_x1 <= start_point[0] <= roi_x2 and roi_y1 <= start_point[1] <= roi_y2)
+            start_outside_or_top = (start_point[1] < roi_center_y or start_point[0] < roi_x1 or start_point[0] > roi_x2)
             end_inside = (roi_x1 <= end_point[0] <= roi_x2 and roi_y1 <= end_point[1] <= roi_y2)
-            if start_outside and end_inside:
+            if start_outside_or_top and end_inside:
                 return "VAO"
 
         # RA: đi từ trong ra
         if dy < 0:
             start_inside = (roi_x1 <= start_point[0] <= roi_x2 and roi_y1 <= start_point[1] <= roi_y2)
-            end_outside = not (roi_x1 <= end_point[0] <= roi_x2 and roi_y1 <= end_point[1] <= roi_y2)
-            if start_inside and end_outside:
+            end_outside_or_top = (end_point[1] < roi_center_y or end_point[0] < roi_x1 or end_point[0] > roi_x2)
+            if start_inside and end_outside_or_top:
                 return "RA"
 
         return None
-
 
     def run(self):
         self.running = True
