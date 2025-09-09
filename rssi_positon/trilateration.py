@@ -1,6 +1,6 @@
 import numpy as np
 
-def rssi_to_distance(rssi, tx_power=-36, n=0.33):
+def rssi_to_distance(rssi, tx_power=-36, n=2.0):
     if rssi == 0:
         return -1
     return 10 ** ((tx_power - rssi) / (10 * n))

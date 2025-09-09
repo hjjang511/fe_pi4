@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentWidget(self.waiting_page)
 
         # Khởi động UART worker
-        self.uart_worker = UartWorker(port="COM9", baudrate=9600)
+        self.uart_worker = UartWorker(port="/dev/ttyACM0", baudrate=9600)
         self.uart_worker.data_received.connect(self.handle_uart_log)
         self.uart_worker.start()
 

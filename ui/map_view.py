@@ -61,7 +61,7 @@ class Ui_map_view(object):
 
         # Map container (bản đồ ở giữa)
         self.map_container = QtWidgets.QWidget()
-        self.map_container.setMaximumSize(300, 400)
+        self.map_container.setMaximumSize(450, 450)
         self.map_container.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
         self.main_layout.addWidget(self.map_container)
 
@@ -95,27 +95,6 @@ class Ui_map_view(object):
         self.main_layout.addWidget(self.right_box)
         self.verticalLayout.addWidget(self.main_group)
 
-        # --- Footer ---
-        self.footer_widget = QtWidgets.QWidget()
-        self.footer_layout = QtWidgets.QHBoxLayout(self.footer_widget)
-        self.footer_layout.setContentsMargins(50, 0, 50, 0)
-
-        self.cart_icon_btn = QtWidgets.QPushButton()
-        self.cart_icon_btn.setIcon(QtGui.QIcon("asset/img/cart.png"))
-        self.cart_icon_btn.setIconSize(QtCore.QSize(34, 34))
-        self.cart_icon_btn.setFlat(True)
-
-        self.cart_lb = QtWidgets.QLabel("0 Product")
-        self.lb_mount = QtWidgets.QLabel("TOTAL MOUNT")
-        self.amout_lb = QtWidgets.QLabel("0")
-
-        self.footer_layout.addWidget(self.cart_icon_btn)
-        self.footer_layout.addWidget(self.cart_lb)
-        self.footer_layout.addStretch()
-        self.footer_layout.addWidget(self.lb_mount)
-        self.footer_layout.addWidget(self.amout_lb)
-
-        self.verticalLayout.addWidget(self.footer_widget)
         
         self.load_list_data("data/list_data.csv")        
 

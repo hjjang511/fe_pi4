@@ -72,9 +72,9 @@ class MapPage(QWidget):
         self.timer.timeout.connect(self.scan_and_update_position)
 
         self.beacons_pos = {
-            "0-0": (6, 8),
-            "0-30": (0, 8),
-            "15-30": (0, 0)
+            "0-0": (0, 0),
+            "0-30": (0, 30),
+            "15-30": (15, 30)
         }
     def on_map_loaded(self, ok):
         if ok:
@@ -96,7 +96,7 @@ class MapPage(QWidget):
     def scan_and_update_position(self):
         if not self.ble_thread.isRunning():
             self.ble_thread.start()
-
+            
     def handle_ble_data(self, rssi_dict):
         try:
             print("RSSI raw:", rssi_dict)
@@ -106,48 +106,49 @@ class MapPage(QWidget):
                 k: self.rssi_filter.update(k, v)
                 for k, v in rssi_dict.items()
             }
-
             print("RSSI filtered:", filtered_rssi)
 
-                # --- D? �o�n b?ng m� h?nh ML ---
+            # --- 2. D? �o�n b?ng m� h?nh ML ---
             input_df = pd.DataFrame([{
                 "0-0": filtered_rssi.get("0-0", -100),
                 "0-30": filtered_rssi.get("0-30", -100),
                 "15-30": filtered_rssi.get("15-30", -100)
             }])
             x_ml, y_ml = self.model.predict(input_df)[0]
+            print(f"ML Position: ({x_ml:.2f}, {y_ml:.2f})")
 
-            # --- B? trilateration ho�n to�n (n?u b?n ch�a d�ng t?t) ---
-            x, y = x_ml, y_ml
-            print(f"ML Position: ({x:.2f}, {y:.2f})")
+            # --- 4. K?t h?p ML & Trilateration (trung b?nh) ---
+            x = (x_ml) 
+            y = (y_ml) 
 
-            # --- 3. Kalman filter ---
+            # --- 5. Kalman filter ---
             self.kalman_filter.predict()
             self.kalman_filter.update([x, y])
             x_kf, y_kf = self.kalman_filter.get_position()
 
-            # --- 4. Gi?i h?n trong b?n �? ---
-            x_kf = max(0, min(x_kf, 15))
+            # --- 6. Gi?i h?n trong b?n �? ---
+            x_kf = max(0, min(x_kf, 30))
             y_kf = max(0, min(y_kf, 30))
 
-            # --- 5. Gi?i h?n nh?y nh? ---
+            # --- 7. Gi?i h?n nh?y nh? ---
             dx = abs(x_kf - self.last_pos[0])
             dy = abs(y_kf - self.last_pos[1])
 
-            movement_threshold = 0.5  # Gi? nguy�n n?u g?n nh� �?ng y�n
+            movement_threshold = 0.5
             if dx < movement_threshold and dy < movement_threshold:
                 print(f"?? �?ng y�n t?i ({self.last_pos[0]:.2f}, {self.last_pos[1]:.2f})")
                 x_kf, y_kf = self.last_pos
 
-            # --- 6. Gi?i h?n thay �?i qu� l?n ---
-            delta_threshold = 1.5  # t?i �a 1.5 grid
+            # --- 8. Gi?i h?n thay �?i qu� l?n ---
+            delta_threshold = 1.5
             if dx < delta_threshold and dy < delta_threshold:
                 if self.map_loaded:
                     pixel_x = x_kf * 15
                     pixel_y = y_kf * 15
                     self.map_view.page().runJavaScript(f"setStartPosition({pixel_x}, {pixel_y})")
-                    self.map_view.page().runJavaScript(f"updateMarker({pixel_x}, {pixel_y})")   
+                    self.map_view.page().runJavaScript(f"updateMarker({pixel_x}, {pixel_y})")
                 self.last_pos = [x_kf, y_kf]
+
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 self.path_writer.writerow([timestamp, round(x_kf, 2), round(y_kf, 2)])
                 self.path_log_file.flush()
@@ -157,6 +158,8 @@ class MapPage(QWidget):
 
         except Exception as e:
             print("? L?i x? l? BLE:", e)
+
+
 
 
             

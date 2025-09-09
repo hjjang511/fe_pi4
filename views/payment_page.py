@@ -132,93 +132,93 @@ class PaymentPage(QWidget):
         except Exception as e:
             self.status_label.setText(f"❌ Exception khi query: {e}")
 
-def send_payment_to_server(self):
-    cart = []
+    def send_payment_to_server(self):
+        cart = []
 
-    # ==== Đọc giỏ hàng từ cart.csv ====
-    try:
-        with open("data/cart_data.csv", newline='', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                cart.append({
-                    "index": row["id"],
-                    "name": row["name"],
-                    "price": float(row["price"]),
-                    "quantity": int(row["quantity"]),
-                    "total": float(row["total"])
-                })
-    except Exception as e:
-        print(f"❌ Lỗi đọc cart.csv: {e}")
-
-    # ==== Đọc đường đi từ path_log.csv ====
-    path_log = []
-    try:
-        with open("data/path_log.csv", newline='', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                path_log.append({
-                    "timestamp": row["timestamp"],
-                    "x": float(row["x"]),
-                    "y": float(row["y"])
-                })
-    except Exception as e:
-        print(f"❌ Lỗi đọc path_log.csv: {e}")
-
-    if not cart:
-        print("❗ Giỏ hàng rỗng, không gửi!")
-        return
-
-    # ==== Dữ liệu order ====
-    order_data = {
-        "timestamp": datetime.datetime.now().isoformat(),
-        "cart": cart,
-        "total_amount": sum(item["total"] for item in cart),
-        "status": "PAID",
-    }
-
-    # ==== Dữ liệu path ====
-    path_data = {"orderId": self.order_id, "path": path_log}
-
-    # ==== Gửi đơn hàng ====
-    order_sent = False
-    try:
-        response = requests.post(f"{API_BASE_URL}/api/orders", json=order_data)
-        if response.status_code in [200, 201]:
-            print("✅ Gửi đơn hàng thành công!")
-            order_sent = True
-        else:
-            print(f"❌ Gửi đơn hàng thất bại: {response.status_code} - {response.text}")
-    except Exception as e:
-        print(f"❌ Lỗi gửi order đến server: {e}")
-
-    # ==== Gửi log_path ====
-    path_sent = False
-    if path_log:
+        # ==== Đọc giỏ hàng từ cart.csv ====
         try:
-            response = requests.post(f"{API_BASE_URL}/api/log_paths", json=path_data)
+            with open("data/cart_data.csv", newline='', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    cart.append({
+                        "index": row["id"],
+                        "name": row["name"],
+                        "price": float(row["price"]),
+                        "quantity": int(row["quantity"]),
+                        "total": float(row["total"])
+                    })
+        except Exception as e:
+            print(f"❌ Lỗi đọc cart.csv: {e}")
+
+        # ==== Đọc đường đi từ path_log.csv ====
+        path_log = []
+        try:
+            with open("data/path_log.csv", newline='', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    path_log.append({
+                        "timestamp": row["timestamp"],
+                        "x": float(row["x"]),
+                        "y": float(row["y"])
+                    })
+        except Exception as e:
+            print(f"❌ Lỗi đọc path_log.csv: {e}")
+
+        if not cart:
+            print("❗ Giỏ hàng rỗng, không gửi!")
+            return
+
+        # ==== Dữ liệu order ====
+        order_data = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "cart": cart,
+            "total_amount": sum(item["total"] for item in cart),
+            "status": "PAID",
+        }
+
+        # ==== Dữ liệu path ====
+        path_data = {"orderId": self.order_id, "path": path_log}
+
+        # ==== Gửi đơn hàng ====
+        order_sent = False
+        try:
+            response = requests.post(f"{API_BASE_URL}/api/orders", json=order_data)
             if response.status_code in [200, 201]:
-                print("✅ Gửi log_path thành công!")
-                path_sent = True
+                print("✅ Gửi đơn hàng thành công!")
+                order_sent = True
             else:
-                print(f"❌ Gửi log_path thất bại: {response.status_code} - {response.text}")
+                print(f"❌ Gửi đơn hàng thất bại: {response.status_code} - {response.text}")
         except Exception as e:
-            print(f"❌ Lỗi gửi path đến server: {e}")
+            print(f"❌ Lỗi gửi order đến server: {e}")
 
-    # ==== Xóa/clear dữ liệu CSV nếu gửi thành công ====
-    if order_sent:
-        for file in ["data/cart_data.csv", "data/shop_data.csv", "data/list_data.csv"]:
+        # ==== Gửi log_path ====
+        path_sent = False
+        if path_log:
             try:
-                open(file, "w", encoding="utf-8", newline='').close()
-                print(f"🗑️ Đã xóa dữ liệu {file}")
+                response = requests.post(f"{API_BASE_URL}/api/log_paths", json=path_data)
+                if response.status_code in [200, 201]:
+                    print("✅ Gửi log_path thành công!")
+                    path_sent = True
+                else:
+                    print(f"❌ Gửi log_path thất bại: {response.status_code} - {response.text}")
             except Exception as e:
-                print(f"❌ Lỗi xóa {file}: {e}")
+                print(f"❌ Lỗi gửi path đến server: {e}")
 
-    if path_sent:
-        try:
-            open("data/path_log.csv", "w", encoding="utf-8", newline='').close()
-            print("🗑️ Đã xóa dữ liệu path_log.csv")
-        except Exception as e:
-            print(f"❌ Lỗi xóa path_log.csv: {e}")
+        # ==== Xóa/clear dữ liệu CSV nếu gửi thành công ====
+        if order_sent:
+            for file in ["data/cart_data.csv", "data/shop_data.csv", "data/list_data.csv"]:
+                try:
+                    open(file, "w", encoding="utf-8", newline='').close()
+                    print(f"🗑️ Đã xóa dữ liệu {file}")
+                except Exception as e:
+                    print(f"❌ Lỗi xóa {file}: {e}")
+
+        if path_sent:
+            try:
+                open("data/path_log.csv", "w", encoding="utf-8", newline='').close()
+                print("🗑️ Đã xóa dữ liệu path_log.csv")
+            except Exception as e:
+                print(f"❌ Lỗi xóa path_log.csv: {e}")
 
 
 
